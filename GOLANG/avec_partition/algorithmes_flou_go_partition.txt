@@ -1,0 +1,52 @@
+Programme 2 : programme_partition.go (concurrent, “Solution A”)
+
+Objectif
+Faire exactement le même flou que le programme 1, mais en parallélisant le calcul.
+
+L’idée clé
+Le flou est “par pixel” → donc on peut calculer des zones différentes de l’image en parallèle, tant qu’on évite les conflits d’écriture.
+
+Déroulement (étapes exactes)
+1) Même chargement (PNG → RGBA src)
+Exactement pareil que le séquentiel.
+
+2) Créer dst
+Même taille.
+
+3) Découper le travail en “jobs”
+On coupe l’image par bandes de lignes :
+- un job = yStart..yEnd (par exemple 32 lignes)
+- on envoie ces jobs dans un chan Job
+
+Pourquoi des bandes de lignes ?
+- Simple à coder
+- Chaque worker écrit sur des lignes différentes → pas de race condition
+- Très facile à justifier
+
+4) Créer un Worker Pool
+- On lance workers goroutines (souvent = runtime.NumCPU()).
+- Chaque goroutine boucle : elle lit un job dans le channel, puis traite les lignes.
+
+5) Traitement d’un job
+Pour chaque pixel (x,y) dans les lignes du job :
+- exactement le même calcul du box blur que le séquentiel
+- Lecture dans src (partagée par tous, lecture seule)
+- Écriture dans dst (mais uniquement sur des lignes qui appartiennent à ce job)
+
+C’est ça la “Solution A” :
+- src est global et partagé, mais read-only
+- dst est global aussi, mais chaque worker écrit dans une zone disjointe
+
+6) Fin propre
+- Quand tous les jobs sont envoyés : close(jobs)
+- Les workers finissent naturellement quand le channel est fermé
+- WaitGroup attend la fin des workers
+- On encode et écrit le PNG
+
+Pourquoi il n’y a pas d’artefacts aux frontières des partitions
+Parce que même si un worker traite les lignes 100..131, quand il calcule le pixel (x,100) :
+- il peut lire les voisins (x, 99) ou (x, 98) dans src sans problème
+- donc le blur reste correct
+- aucune “frontière de chunk” visible
+
+(Le seul endroit spécial, c’est le bord de l’image entière, géré par clamp.)

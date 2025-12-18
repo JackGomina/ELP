@@ -1,0 +1,35 @@
+Programme 1 : programme.go (séquentiel)
+
+Objectif
+Prendre image.png → produire image_blur.png en appliquant un box blur (flou par moyenne).
+
+Déroulement (étapes exactes)
+1) Lire et décoder l’image PNG
+- On ouvre image.png
+- png.Decode transforme le fichier en objet image.Image
+
+2) Convertir en image.RGBA
+- Pourquoi : image.Image est une interface générique, parfois lente à lire pixel par pixel.
+- image.RGBA stocke les pixels dans un buffer []byte contigu (RGBA RGBA RGBA…), donc accès très simple et rapide.
+
+3) Créer l’image de sortie dst
+- même taille que l’entrée
+
+4) Appliquer le box blur
+Pour chaque pixel (x,y) :
+- on parcourt tous ses voisins dans un carré k×k (k impair, ex 5×5)
+- on additionne séparément R, G, B, A
+- on divise par le nombre total de voisins (k*k)
+- on écrit le résultat dans dst(x,y)
+
+5) Gestion des bords (clamp)
+- Si le voisin demandé sort de l’image (ex x=-1), on “ramène” à 0.
+- Ça évite les erreurs, et ça donne un bord “répété” plutôt propre.
+
+6) Encoder et écrire image_blur.png
+- png.Encoder.Encode(dst) → fichier final.
+
+Pourquoi ça marche bien (conceptuellement)
+- Le box blur est une convolution simple : chaque pixel de sortie dépend uniquement d’un voisinage autour du pixel d’entrée.
+- Important : on lit toujours dans src, on écrit dans dst.
+  Donc on ne “contamine” pas les calculs en utilisant des pixels déjà floutés.
