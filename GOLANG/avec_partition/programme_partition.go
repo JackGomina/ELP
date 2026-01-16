@@ -64,7 +64,7 @@ func main() {
 	srcImg, err := png.Decode(inFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error decoding PNG:", err)
-		os.Exit(1)
+		os.Exit(1) //Ca va tuer la session : pas cool pour le serveur
 	}
 
 	// --- Convert to RGBA for fast pixel access ---
@@ -90,7 +90,7 @@ func main() {
 		defer wg.Done()
 
 		for job := range jobs {
-			// Process rows [job.yStart, job.yEnd)
+			// Process rows [job.yStart, job.yEnd]
 			for y := job.yStart; y < job.yEnd; y++ {
 				for x := 0; x < w; x++ {
 
@@ -147,7 +147,7 @@ func main() {
 	outFile, err := os.Create(*outputPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error creating output:", err)
-		os.Exit(1)
+		os.Exit(1) //Ca va tuer la session : pour le serveur cest pas dingue
 	}
 	defer outFile.Close()
 
