@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>TC-LOGO</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="Main.js"></script>
+  </head>
+
+  <body>
+    <div class="page">Type in your code below:</div>
+
+    <div class="page">
+      <input placeholder="example: [Repeat 360 [Forward 1, Left 1]]">
+      <button class="button-4">Draw</button>
+      <svg viewBox="0 0 500 500" width="500" height="500"></svg>
+    </div>
+
+    <script>
+      var app = Elm.Main.init({
+        node: document.getElementById("elm-app-is-loaded-here")
+      });
+    </script>
+  </body>
+</html>
