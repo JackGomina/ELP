@@ -6,12 +6,13 @@ import Html exposing (Html, button, div, textarea)
 import Html as H
 import Html.Attributes exposing (checked, cols, rows, type_, value)
 import Html.Attributes as HA
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick, onInput, onCheck)
 import Svg exposing (Svg, circle, line, svg)
 import Svg.Attributes as SA
 
 
 -- LANGUAGE
+
 
 type Command
     = Forward Int
@@ -20,7 +21,9 @@ type Command
     | Repeat Int (List Command)
 
 
+
 -- MODEL
+
 
 type alias Turtle =
     { x : Float
@@ -55,10 +58,20 @@ type alias Model =
     }
 
 
+
+-- INIT
+
+
 init : Model
 init =
     { current =
-        { turtle = { x = 200, y = 200, angle = 0, penDown = True, color = "#0000ff" }
+        { turtle =
+            { x = 200
+            , y = 200
+            , angle = 0
+            , penDown = True
+            , color = "#0000ff"
+            }
         , segments = []
         }
     , preview = Nothing
@@ -68,7 +81,9 @@ init =
     }
 
 
+
 -- UPDATE
+
 
 type Msg
     = UpdateInput String
@@ -87,7 +102,7 @@ update msg model =
                 cmds =
                     parse str
 
-                previewState =
+                newPreview =
                     case cmds of
                         [] ->
                             Nothing
@@ -97,16 +112,19 @@ update msg model =
             in
             { model
                 | input = str
-                , preview = previewState
+                , preview = newPreview
             }
 
         Run ->
             let
-                newState =
-                    execute (parse model.input) model.current
+                cmds =
+                    parse model.input
+
+                newCurrent =
+                    execute cmds model.current
             in
             { model
-                | current = newState
+                | current = newCurrent
                 , undoStack = model.current :: model.undoStack
                 , redoStack = []
                 , preview = Nothing
@@ -140,24 +158,27 @@ update msg model =
 
         TogglePen value ->
             let
-                current =
+                oldCurrent =
                     model.current
 
-                turtle =
-                    current.turtle
+                oldTurtle =
+                    oldCurrent.turtle
 
                 newTurtle =
-                    { turtle | penDown = value }
+                    { oldTurtle | penDown = value }
 
                 newCurrent =
-                    { current | turtle = newTurtle }
+                    { oldCurrent | turtle = newTurtle }
+
+                cmds =
+                    parse model.input
 
                 newPreview =
-                    case parse model.input of
+                    case cmds of
                         [] ->
                             Nothing
 
-                        cmds ->
+                        _ ->
                             Just (execute cmds newCurrent)
             in
             { model
@@ -167,24 +188,27 @@ update msg model =
 
         UpdateColor color ->
             let
-                current =
+                oldCurrent =
                     model.current
 
-                turtle =
-                    current.turtle
+                oldTurtle =
+                    oldCurrent.turtle
 
                 newTurtle =
-                    { turtle | color = color }
+                    { oldTurtle | color = color }
 
                 newCurrent =
-                    { current | turtle = newTurtle }
+                    { oldCurrent | turtle = newTurtle }
+
+                cmds =
+                    parse model.input
 
                 newPreview =
-                    case parse model.input of
+                    case cmds of
                         [] ->
                             Nothing
 
-                        cmds ->
+                        _ ->
                             Just (execute cmds newCurrent)
             in
             { model
@@ -192,7 +216,10 @@ update msg model =
                 , preview = newPreview
             }
 
--- PARSER
+
+
+-- PARSER (simple et naïf)
+
 
 parse : String -> List Command
 parse input =
@@ -258,30 +285,48 @@ toInt s =
 
 -- EXECUTION
 
+
 execute : List Command -> DrawingState -> DrawingState
 execute cmds state =
     List.foldl executeOne state cmds
 
 
 executeOne : Command -> DrawingState -> DrawingState
-executeOne cmd ({ turtle } as state) =
+executeOne cmd state =
     case cmd of
         Forward n ->
             forward (toFloat n) state
 
         Left n ->
-            { state | turtle = { turtle | angle = turtle.angle + toFloat n } }
+            let
+                turtle =
+                    state.turtle
+
+                newTurtle =
+                    { turtle | angle = turtle.angle + toFloat n }
+            in
+            { state | turtle = newTurtle }
 
         Right n ->
-            { state | turtle = { turtle | angle = turtle.angle - toFloat n } }
+            let
+                turtle =
+                    state.turtle
+
+                newTurtle =
+                    { turtle | angle = turtle.angle - toFloat n }
+            in
+            { state | turtle = newTurtle }
 
         Repeat n cmds ->
             List.foldl (\_ s -> execute cmds s) state (List.range 1 n)
 
 
 forward : Float -> DrawingState -> DrawingState
-forward dist ({ turtle, segments } as state) =
+forward dist state =
     let
+        turtle =
+            state.turtle
+
         rad =
             degreesToRadians turtle.angle
 
@@ -291,26 +336,29 @@ forward dist ({ turtle, segments } as state) =
         dy =
             -dist * sin rad
 
-        x2 =
+        newX =
             turtle.x + dx
 
-        y2 =
+        newY =
             turtle.y + dy
 
         newTurtle =
-            { turtle | x = x2, y = y2 }
+            { turtle | x = newX, y = newY }
     in
     if turtle.penDown then
         let
             seg =
                 { x1 = turtle.x
                 , y1 = turtle.y
-                , x2 = x2
-                , y2 = y2
+                , x2 = newX
+                , y2 = newY
                 , color = turtle.color
                 }
         in
-        { state | turtle = newTurtle, segments = seg :: segments }
+        { state
+            | turtle = newTurtle
+            , segments = seg :: state.segments
+        }
 
     else
         { state | turtle = newTurtle }
@@ -323,6 +371,7 @@ degreesToRadians deg =
 
 
 -- VIEW
+
 
 view : Model -> Html Msg
 view model =
@@ -357,7 +406,7 @@ view model =
                 , H.input
                     [ type_ "checkbox"
                     , checked state.turtle.penDown
-                    , Html.Events.onCheck TogglePen
+                    , onCheck TogglePen
                     ]
                     []
                 ]
@@ -430,7 +479,9 @@ previewSegmentView s =
         []
 
 
+
 -- MAIN
+
 
 main : Program () Model Msg
 main =
