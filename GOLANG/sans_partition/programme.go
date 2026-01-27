@@ -7,6 +7,7 @@ import (
 	"image/draw"
 	"image/png"
 	"os"
+	"time"
 )
 
 func clamp(v, lo, hi int) int {
@@ -62,6 +63,7 @@ func main() {
 	// For each pixel (x,y), average all pixels in the square neighborhood:
 	// x in [x-radius, x+radius], y in [y-radius, y+radius]
 	// Border handling: clamp coordinates into the image.
+	startTime := time.Now()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 
@@ -91,6 +93,8 @@ func main() {
 			dst.Pix[di+3] = uint8(sumA / count)
 		}
 	}
+	elapsedTime := time.Since(startTime)
+	fmt.Printf("Temps de traitement de l'image: %v\n", elapsedTime)
 
 	// --- Write output PNG ---
 	outFile, err := os.Create(*outputPath)
