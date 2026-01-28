@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/binary"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -16,7 +15,7 @@ func main() {
 	inPath := os.Args[1]
 	outPath := os.Args[2]
 
-	data, err := ioutil.ReadFile(inPath)
+	data, err := os.ReadFile(inPath)
 	if err != nil {
 		log.Fatalf("read input: %v", err)
 	}
@@ -46,7 +45,7 @@ func main() {
 		log.Fatalf("read resp body: %v", err)
 	}
 
-	if err := ioutil.WriteFile(outPath, resp, 0644); err != nil {
+	if err := os.WriteFile(outPath, resp, 0644); err != nil {
 		log.Fatalf("write output: %v", err)
 	}
 }

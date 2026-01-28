@@ -13,9 +13,10 @@ import (
 	"net"
 	"runtime"
 	"sync"
+	"time"
 )
 
-// Protocol: client envoie uint64 BE length, puis PNG bytes. Le serveur renvoie uint64 BE length, puis PNG bytes.
+// Protocole: client envoie uint64 BE length, puis PNG bytes. Le serveur renvoie uint64 BE length, puis PNG bytes.
 
 type Job struct {
 	yStart int
@@ -139,7 +140,10 @@ func handleConnection(conn net.Conn) {
 	workers := 0 // => runtime.NumCPU()
 
 	// Blur using a worker pool dedicated to this client
+	startTime := time.Now()
 	dst := blurImage(srcImg, k, workers, chunk)
+	elapsedTime := time.Since(startTime)
+	log.Printf("Temps de traitement de l'image: %v", elapsedTime)
 
 	// Encode result to PNG
 	var outBuf bytes.Buffer                                      // Buffer pour stocker l'image encodée
@@ -163,6 +167,7 @@ func handleConnection(conn net.Conn) {
 	}
 
 	// Loop to allow client to send more images on same connection
+	// (pas implémenté ici)
 }
 
 func main() {
