@@ -1,0 +1,11 @@
+{
+  "name": "flip7-text",
+  "version": "1.0.0",
+  "description": "Flip7 (simplifié) - jeu de cartes multi-joueurs en mode texte + logs",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "license": "MIT"
+}
