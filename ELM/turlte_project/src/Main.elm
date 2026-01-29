@@ -218,7 +218,7 @@ update msg model =
 
 
 
--- PARSER (simple et naïf)
+-- PARSER
 
 
 parse : String -> List Command
